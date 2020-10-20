@@ -79,7 +79,7 @@ userconfig.redhatcop.redhat.io/sandboxes created
 
 However, there's one likely hiccup that our workflow needs to be able to handle. The management of operators via the [Operator Lifecycel Manager](https://github.com/operator-framework/operator-lifecycle-manager) creates a race condition. When a `Subscription` and `OperatorGroup` resource gets created, it triggers OLM to fetch details about the operator, and install the relevant `CustomResourceDefinitions`(CRDs). Until the CRDs have been put to the cluster, an attempt to create a matching `CustomResource` will fail, as that resource type doesn't yet exist in the API.
 
-In our case, we are deploying the [Namespace Configuration Operator](https://github.com/redhat-cop/namespace-configuration-operator), which provides the `UserConfig` resource type. If we try to create both the `OperatorGroup`/`Subscription` to deploy the operator, and the `UserConfig` to invoke it in the same command, we'll get an error:
+In our case, we are deploying the [Namespace Configuration Operator](https://github.com/luigiaparicio/namespace-configuration-operator), which provides the `UserConfig` resource type. If we try to create both the `OperatorGroup`/`Subscription` to deploy the operator, and the `UserConfig` to invoke it in the same command, we'll get an error:
 
 ```
 Error from server (NotFound): error when creating "simple-bootstrap/3-operator-configs/sandbox-userconfig.yaml": the server could not find the requested resource (post userconfigs.redhatcop.redhat.io)
@@ -106,14 +106,14 @@ Now that we have a repeatable process for managing cluster resources, we can set
 By running the workflow locally, we've already created a `CronJob` in the `cluster-ops` namespace. In order for it to run, it requires a secret be created pointing it to the repository where the cluster configs live.
 
 ```
-oc create secret generic gitops-repo --from-literal=url=https://github.com/redhat-cop/declarative-openshift.git --from-literal=ref=master --from-literal=contextDir=simple-bootstrap --from-literal=pruneLabel=config.example.com/name=simple-bootstrap -n cluster-ops
+oc create secret generic gitops-repo --from-literal=url=https://github.com/luigiaparicio/declarative-openshift.git --from-literal=ref=master --from-literal=contextDir=simple-bootstrap --from-literal=pruneLabel=config.example.com/name=simple-bootstrap -n cluster-ops
 ```
 
 Now, if you wait a few minutes and check the logs in the job pod...
 
 ```
 $ oc logs cronjob-gitops-1591666560-4q7f2 -n cluster-ops
-Syncing cluster config from https://github.com/redhat-cop/declarative-openshift.git/simple-bootstrap
+Syncing cluster config from https://github.com/luigiaparicio/declarative-openshift.git/simple-bootstrap
 Cloning into '/tmp/repodir'...
 namespace/deleteable configured
 namespace/namespace-operator configured
@@ -209,7 +209,7 @@ In some cases, a cluster administrator might have a need to apply a patch to a r
 - Labelling the `default`, `kube-system`, or other "out of the box" namespaces
 - Labelling nodes not managed by an operator
 
-For these cases, we use the [Resource Locker Operator](https://github.com/redhat-cop/resource-locker-operator#resource-patch-locking) to provide a "declarative patch" that will be kept in place by the operator. Building this solution in a declarative way involves creating the following components:
+For these cases, we use the [Resource Locker Operator](https://github.com/luigiaparicio/resource-locker-operator#resource-patch-locking) to provide a "declarative patch" that will be kept in place by the operator. Building this solution in a declarative way involves creating the following components:
 
 - A [manifest](/simple-bootstrap/0-namespaces/resource-locker-operator.yaml) for managing a `Namespace` for the Resource Locker Operator
 - A [manifest](/simple-bootstrap/1-operators/resource-locker-operator.yaml) for installing the Resource Locker Operator
